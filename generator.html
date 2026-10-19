@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Генератор — QA-шпаргалка</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234a78d4'/%3E%3Cpath d='M9 16.5l4.5 4.5L23 11.5' stroke='white' stroke-width='3.2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="assets/style.css">
+  <script src="data/checklists.js"></script>
+  <script src="assets/common.js"></script>
+</head>
+<body>
+  <header id="site-header"></header>
+
+  <main class="container">
+    <h1>Генератор тестовых данных</h1>
+    <p class="lead">Всё считается в браузере и никуда не отправляется. Клик по значению — копирование.</p>
+
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" id="tab-boundary" aria-controls="boundary" data-tab="boundary" data-testid="generator:tab-boundary">Граничные значения</button>
+      <button class="tab" role="tab" id="tab-strings" aria-controls="strings" data-tab="strings" data-testid="generator:tab-strings">Строки-ловушки</button>
+      <button class="tab" role="tab" id="tab-data" aria-controls="data" data-tab="data" data-testid="generator:tab-data">Тестовые данные</button>
+    </div>
+
+    <!-- Граничные значения -->
+    <section class="panel" id="boundary" role="tabpanel" aria-labelledby="tab-boundary">
+      <p class="muted">Укажите ограничения поля из требований — таблица пересчитывается сразу.</p>
+      <div class="form-row">
+        <label class="field">Тип поля
+          <select class="input" id="b-type" data-testid="boundary:type">
+            <option value="string">Длина строки</option>
+            <option value="int">Целое число</option>
+            <option value="decimal">Дробное число</option>
+            <option value="date">Дата</option>
+          </select>
+        </label>
+        <label class="field"><span id="b-min-label">Минимум</span>
+          <input class="input" id="b-min" data-testid="boundary:min">
+        </label>
+        <label class="field"><span id="b-max-label">Максимум</span>
+          <input class="input" id="b-max" data-testid="boundary:max">
+        </label>
+        <label class="field" id="b-step-field">Шаг
+          <input class="input" id="b-step" type="number" value="0.01" step="any" data-testid="boundary:step">
+        </label>
+        <label class="field wide" id="b-fill-field">Чем заполнять строку
+          <select class="input" id="b-fill" data-testid="boundary:fill"></select>
+        </label>
+        <label class="field" id="b-format-field">Формат даты
+          <select class="input" id="b-format" data-testid="boundary:format"></select>
+        </label>
+      </div>
+      <p class="error" id="b-error" role="alert" data-testid="boundary:error" hidden></p>
+      <div class="toolbar">
+        <span class="small muted" id="b-legend"><span class="tag ok">валидно</span> <span class="tag bad">ошибка</span> <span class="tag check">уточнить по требованиям</span></span>
+        <span class="spacer"></span>
+        <button class="btn small" id="b-copy-md" type="button" data-testid="boundary:copy-markdown">Скопировать как таблицу (Markdown)</button>
+      </div>
+      <div class="table-wrap">
+        <table class="data">
+          <thead><tr><th>Значение</th><th>Что проверяем</th><th>Ожидание</th><th></th></tr></thead>
+          <tbody id="b-rows" data-testid="boundary:rows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Строки -->
+    <section class="panel" id="strings" role="tabpanel" aria-labelledby="tab-strings" hidden>
+      <h2>Строка заданной длины</h2>
+      <p class="muted small">Counterstring <code>*3*5*7*9*12*</code> — по обрезанному значению сразу видно, сколько символов приняло поле: число перед последней звёздочкой и есть длина.</p>
+      <div class="form-row">
+        <label class="field">Длина
+          <input class="input" id="s-len" type="number" min="0" max="1000000" value="256" data-testid="strings:length">
+        </label>
+        <label class="field wide">Заполнение
+          <select class="input" id="s-fill" data-testid="strings:fill"></select>
+        </label>
+        <button class="btn primary" id="s-copy" type="button" data-testid="strings:copy">Скопировать</button>
+        <button class="btn" id="s-download" type="button" data-testid="strings:download">Скачать .txt</button>
+      </div>
+      <p class="small muted" id="s-info" data-testid="strings:info"></p>
+      <textarea class="input" id="s-out" readonly data-testid="strings:output" aria-label="Сгенерированная строка"></textarea>
+
+      <h2>Готовые наборы</h2>
+      <p class="muted small">Клик по значению копирует его. Подписи в скобках — пояснение, копируется только само значение.</p>
+      <div class="legend"><span class="l-ok">валидное</span><span class="l-bad">невалидное</span></div>
+      <div id="s-sets" data-testid="strings:sets"></div>
+    </section>
+
+    <!-- Наборы данных -->
+    <section class="panel" id="data" role="tabpanel" aria-labelledby="tab-data" hidden>
+      <p class="muted">Выберите язык и поля. Имена, отчество, адрес, телефон и тексты — на выбранном языке; почта и домены — латиницей, только в зарезервированных тестовых зонах (<code>*.example.com</code>, <code>.test</code>, <code>пример.испытание</code>…), письма не уйдут реальным людям. ИНН — с валидными контрольными цифрами, паспорт — в формате РФ.</p>
+      <div class="form-row">
+        <label class="field wide">Язык данных
+          <select class="input" id="d-lang" data-testid="data:lang"></select>
+        </label>
+        <div class="field wide ms" id="d-cols-wrap">
+          <span id="d-cols-label">Поля</span>
+          <button class="input ms-toggle" id="d-cols-toggle" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="d-cols-panel" aria-labelledby="d-cols-label d-cols-toggle" data-testid="data:columns-toggle">
+            <span class="ms-value" id="d-cols-value"></span><span class="ms-arrow" aria-hidden="true">▾</span>
+          </button>
+          <div class="ms-panel" id="d-cols-panel" role="group" aria-label="Поля набора" hidden data-testid="data:columns-panel">
+            <div class="ms-list" id="d-cols" data-testid="data:columns"></div>
+            <div class="ms-actions">
+              <button class="btn small" type="button" id="d-cols-all" data-testid="data:columns-all">Все</button>
+              <button class="btn small" type="button" id="d-cols-default" data-testid="data:columns-default">По умолчанию</button>
+              <span class="spacer"></span>
+              <button class="btn small primary" type="button" id="d-cols-done" data-testid="data:columns-done">Готово</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="small muted lang-note" id="d-lang-note"></p>
+      <div class="form-row" style="margin-top:16px">
+        <label class="field">Строк
+          <input class="input" id="d-count" type="number" min="1" max="1000" value="10" data-testid="data:count">
+        </label>
+        <label class="field wide">Префикс
+          <input class="input" id="d-prefix" placeholder="например, QA_ или test-{n}-" autocomplete="off" data-testid="data:prefix">
+        </label>
+        <label class="field wide">Ловушки
+          <select class="input" id="d-traps" data-testid="data:traps"></select>
+        </label>
+        <label class="field">Разделитель CSV
+          <select class="input" id="d-sep" data-testid="data:separator">
+            <option value=";">; (Excel в RU-локали)</option>
+            <option value=",">, (запятая)</option>
+            <option value="&#9;">Tab</option>
+          </select>
+        </label>
+        <button class="btn primary" id="d-gen" type="button" data-testid="data:generate">Сгенерировать</button>
+      </div>
+      <div class="prefix-hint small muted">
+        <span>Префикс помечает тестовые записи, чтобы потом найти и удалить их одним запросом. Ставится в начало имени, фамилии, отчества, адреса, текстов, почты и хоста в доменах и URL; телефон, ИНН и паспорт не трогает.</span>
+        <span><code>{n}</code> — номер строки, <code>{date}</code> — сегодняшняя дата (ГГГГММДД). Быстрый выбор:
+          <button class="btn small" type="button" data-prefix="QA_" data-testid="data:prefix-preset">QA_</button>
+          <button class="btn small" type="button" data-prefix="autotest_" data-testid="data:prefix-preset">autotest_</button>
+          <button class="btn small" type="button" data-prefix="test-{n}-" data-testid="data:prefix-preset">test-{n}-</button>
+          <button class="btn small" type="button" data-prefix="qa{date}_" data-testid="data:prefix-preset">qa{date}_</button>
+          <button class="btn small" type="button" data-prefix="" data-testid="data:prefix-preset">без префикса</button>
+        </span>
+      </div>
+      <p class="error" id="d-error" role="alert" data-testid="data:error" hidden></p>
+      <div class="toolbar">
+        <span class="small muted" id="d-info" data-testid="data:info"></span>
+        <span class="spacer"></span>
+        <button class="btn small" id="d-copy-csv" type="button" data-testid="data:copy-csv">Копировать CSV</button>
+        <button class="btn small" id="d-copy-json" type="button" data-testid="data:copy-json">Копировать JSON</button>
+        <button class="btn small" id="d-dl-csv" type="button" data-testid="data:download-csv">Скачать CSV</button>
+        <button class="btn small" id="d-dl-json" type="button" data-testid="data:download-json">Скачать JSON</button>
+      </div>
+      <div class="table-wrap">
+        <table class="data cells"><thead id="d-head"></thead><tbody id="d-rows" data-testid="data:rows"></tbody></table>
+      </div>
+      <p class="small muted">Клик по ячейке копирует её значение целиком. В таблице — первые 50 строк, в CSV/JSON — все.
+        Ловушки (<span class="trap-sample">подсвечены</span>) — пустые, граничные и необычные значения в почте, текстах, наборах слов, доменах и URL; часть из них невалидна намеренно.</p>
+    </section>
+  </main>
+
+  <footer class="site">
+    <div class="container">Данные синтетические. Номера карт — публичные тестовые номера платёжных систем, для тестовых сред.</div>
+  </footer>
+
+  <script src="assets/gen-core.js"></script>
+  <script src="assets/generator.js"></script>
+</body>
+</html>

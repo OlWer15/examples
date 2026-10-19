@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>QA-шпаргалка</title>
+  <meta name="description" content="Чек-листы для тестирования элементов интерфейса и генератор тестовых данных.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234a78d4'/%3E%3Cpath d='M9 16.5l4.5 4.5L23 11.5' stroke='white' stroke-width='3.2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="assets/style.css">
+  <script src="data/checklists.js"></script>
+  <script src="assets/common.js"></script>
+</head>
+<body>
+  <header id="site-header"></header>
+
+  <main class="container">
+    <h1>QA-шпаргалка</h1>
+    <p class="lead">Чек-листы для тестирования частей интерфейса и генератор тестовых данных. Всё работает в браузере: данные никуда не отправляются, отметки сохраняются здесь же.</p>
+
+    <label for="search" class="section-title" style="display:block;margin-top:8px">Поиск по чек-листам</label>
+    <input id="search" class="input search" type="search" placeholder="Например: пагинация, эмодзи, двойной клик…" autocomplete="off" data-testid="home:search">
+    <div id="results" class="results" data-testid="home:results"></div>
+
+    <h2 class="section-title">Чек-листы</h2>
+    <div id="checklists" data-testid="home:checklists"></div>
+    <div class="own-bar small muted" style="margin-top:14px">
+      <span id="own-summary" data-testid="home:own-summary"></span>
+      <span class="spacer"></span>
+      <button class="btn small" id="export-own" type="button" data-testid="custom:export">Экспорт своих пунктов</button>
+      <button class="btn small" id="import-own" type="button" data-testid="custom:import">Импорт</button>
+    </div>
+
+    <h2 class="section-title">Генератор</h2>
+    <div class="grid">
+      <a class="card" href="generator.html#boundary" data-testid="home:gen-boundary">
+        <h3>Граничные значения</h3>
+        <p>Введите ограничения поля — получите min−1, min, max, max+1 и ловушки для строк, чисел и дат.</p>
+      </a>
+      <a class="card" href="generator.html#strings" data-testid="home:gen-strings">
+        <h3>Строки-ловушки</h3>
+        <p>Строка нужной длины латиницей, кириллицей, иероглифами или вязью, невидимые символы, HTML/SQL-спецсимволы, email-ы — копирование в один клик.</p>
+      </a>
+      <a class="card" href="generator.html#data" data-testid="home:gen-data">
+        <h3>Тестовые данные</h3>
+        <p>ФИО, почта, телефон, ИНН, паспорт, адрес, домен, URL, тексты — на выбранном языке: кириллица, латиница, иероглифы, вязь. Ловушки, префикс, CSV и JSON.</p>
+      </a>
+    </div>
+  </main>
+
+  <footer class="site">
+    <div class="container">Отметки чек-листов хранятся только в этом браузере.</div>
+  </footer>
+
+  <script src="assets/index.js"></script>
+</body>
+</html>

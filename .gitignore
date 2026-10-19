@@ -1,0 +1,7 @@
+# Системные файлы
+.DS_Store
+Thumbs.db
+# Локальные выгрузки
+*.csv
+*.json.bak
+node_modules/

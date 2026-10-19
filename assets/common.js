@@ -256,9 +256,10 @@
     if (!el) return;
     const links = [
       { href: 'index.html', label: 'Чек-листы', id: 'checklists' },
+      { href: 'api.html', label: 'API', id: 'api' },
       { href: 'generator.html', label: 'Генератор', id: 'generator' },
     ];
-    if (active !== 'generator') active = 'checklists';
+    if (active !== 'generator' && active !== 'api') active = 'checklists';
     el.className = 'site';
     el.innerHTML =
       '<div class="container site-inner">' +

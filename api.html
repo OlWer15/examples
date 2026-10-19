@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Методы API — QA-шпаргалка</title>
+  <meta name="description" content="Подсказки по тестированию методов API: GET, POST, PUT, PATCH, DELETE и коды ответов.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234a78d4'/%3E%3Cpath d='M9 16.5l4.5 4.5L23 11.5' stroke='white' stroke-width='3.2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="assets/style.css">
+  <script src="data/checklists.js"></script>
+  <script src="data/api.js"></script>
+  <script src="assets/common.js"></script>
+</head>
+<body>
+  <header id="site-header"></header>
+
+  <main class="container">
+    <h1>Методы API</h1>
+    <p class="lead">Что делает каждый метод, какие коды ответов ожидать и что проверить. Примеры запросов — на <code>curl</code>, адрес и токен условные.</p>
+
+    <nav class="jump" aria-label="Разделы страницы" id="jump" data-testid="api:jump"></nav>
+
+    <h2 class="section-title" id="overview">Шпаргалка по методам</h2>
+    <div class="table-wrap">
+      <table class="data api-table" data-testid="api:overview">
+        <thead>
+          <tr><th>Метод</th><th>Для чего</th><th>Тело</th><th>Безопасный</th><th>Идемпотентный</th><th>Успех</th><th>Типичные ошибки</th></tr>
+        </thead>
+        <tbody id="overview-rows"></tbody>
+      </table>
+    </div>
+    <p class="small muted">
+      <b>Безопасный</b> — не меняет данные на сервере. <b>Идемпотентный</b> — повторный одинаковый запрос даёт тот же результат, что и первый (например, удалить уже удалённое — ничего нового не произойдёт).
+    </p>
+
+    <div class="tips">
+      <div class="card tip">
+        <h3>401 или 403?</h3>
+        <p><code>401</code> — сервер не знает, кто вы: нет токена, он просрочен или неверный. <code>403</code> — знает, но прав на действие нет. Перепутанные коды — частый баг.</p>
+      </div>
+      <div class="card tip">
+        <h3>400 или 422?</h3>
+        <p><code>400</code> — запрос составлен неверно (битый JSON). <code>422</code> — формат верный, но данные не прошли проверку. Многие API используют только <code>400</code> — важно единообразие.</p>
+      </div>
+      <div class="card tip">
+        <h3>500 на плохой ввод — всегда баг</h3>
+        <p>На любые неверные данные сервер должен отвечать <code>4xx</code> с понятной ошибкой. <code>500</code> и стектрейс в ответе — баг и утечка внутренних деталей.</p>
+      </div>
+    </div>
+
+    <div id="methods" data-testid="api:methods"></div>
+
+    <h2 class="section-title" id="codes">Коды ответов</h2>
+    <input class="input search" id="codes-filter" type="search" placeholder="Фильтр: 404, конфликт, токен, кэш…" autocomplete="off" data-testid="api:codes-filter">
+    <div class="table-wrap">
+      <table class="data codes-table" data-testid="api:codes">
+        <thead><tr><th>Код</th><th>Когда приходит</th><th>На что смотреть</th></tr></thead>
+        <tbody id="codes-rows"></tbody>
+      </table>
+    </div>
+    <p class="small muted" id="codes-empty" hidden>Ничего не найдено.</p>
+
+    <div class="card api-checklist-link">
+      <h3>Чек-лист «Метод API»</h3>
+      <p>Общие проверки для любого метода — контракт, права, валидация, ошибки, списки, конкурентность, безопасность — с отметками, своими пунктами и отчётом.</p>
+      <p style="margin-top:12px"><a class="btn primary" href="checklist.html?id=api" data-testid="api:checklist-link">Открыть чек-лист →</a></p>
+    </div>
+  </main>
+
+  <footer class="site">
+    <div class="container">Адрес <code>api.example.com</code> и <code>$TOKEN</code> в примерах условные — подставьте свои.</div>
+  </footer>
+
+  <script src="assets/api.js"></script>
+</body>
+</html>

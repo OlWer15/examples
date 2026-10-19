@@ -270,6 +270,54 @@ mark { background: var(--accent-soft); color: var(--accent-strong); border-radiu
 .pager { display: flex; justify-content: space-between; gap: 12px; margin-top: 30px; flex-wrap: wrap; }
 .pager .btn { text-decoration: none; }
 
+/* Страница «Методы API» */
+.jump { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 4px 0 8px; }
+.jump a { text-decoration: none; }
+.method {
+  display: inline-block; min-width: 58px; padding: 3px 9px; border-radius: 8px; text-align: center;
+  font-family: var(--mono); font-size: 12.5px; font-weight: 700; letter-spacing: .02em; white-space: nowrap;
+  background: var(--surface-2); color: var(--muted); border: 1px solid transparent;
+}
+.method.m-get { background: var(--ok-soft); color: var(--ok); }
+.method.m-post { background: var(--accent-soft); color: var(--accent); }
+.method.m-put { background: var(--warn-soft); color: var(--warn); }
+.method.m-patch { background: color-mix(in srgb, #8b5cf6 16%, var(--surface)); color: color-mix(in srgb, #8b5cf6 75%, var(--text)); }
+.method.m-delete { background: var(--bad-soft); color: var(--bad); }
+.method.m-head-options { background: var(--surface-2); color: var(--muted); border-color: var(--border); }
+.jump a:hover .method { filter: brightness(1.05); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent); }
+.api-table td { vertical-align: middle; }
+.nowrap-list { white-space: nowrap; font-size: 13px; }
+.tips { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin: 20px 0 8px; }
+.tip h3 { font-size: 15px; }
+.tip p { font-size: 14px; }
+.method-card { margin-top: 18px; scroll-margin-top: 80px; padding: 20px; }
+.method-head { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+.method-head h2 { font-size: 19px; margin: 0; }
+.method-card > p { margin: 0 0 10px; }
+.method-card h3 { font-size: 14px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 18px 0 8px; }
+.method-meta { display: flex; flex-wrap: wrap; gap: 6px 18px; color: var(--muted); padding: 10px 12px; background: var(--surface-2); border-radius: 10px; }
+.method-meta b { color: var(--text); font-weight: 600; }
+.checks, .pitfalls { margin: 0; padding-left: 20px; }
+.checks li, .pitfalls li { margin: 6px 0; }
+.checks .hint { font-size: 13.5px; color: var(--muted); margin-top: 2px; }
+.pitfalls li::marker { content: "⚠  "; }
+.example-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.example-head h3 { margin-bottom: 8px; }
+pre.example {
+  margin: 0; padding: 14px 16px; overflow-x: auto; border-radius: 10px;
+  background: var(--code-bg); border: 1px solid var(--border);
+  font-family: var(--mono); font-size: 13px; line-height: 1.55;
+}
+pre.example code { background: none; padding: 0; font-size: inherit; word-break: normal; white-space: pre; }
+.codes-table .class-row td { background: var(--surface-2); font-weight: 600; font-size: 13px; color: var(--muted); }
+.code-cell { white-space: nowrap; font-weight: 600; }
+.status { display: inline-block; min-width: 42px; padding: 1px 7px; border-radius: 6px; font-family: var(--mono); font-size: 13px; text-align: center; }
+.status.s2 { background: var(--ok-soft); color: var(--ok); }
+.status.s3 { background: var(--accent-soft); color: var(--accent); }
+.status.s4 { background: var(--warn-soft); color: var(--warn); }
+.status.s5 { background: var(--bad-soft); color: var(--bad); }
+.api-checklist-link { margin-top: 28px; }
+
 /* Свои пункты и группы */
 .item { display: flex; align-items: flex-start; }
 .item label { flex: 1; min-width: 0; }

@@ -242,18 +242,34 @@
   $('d-traps').value = store.get('trapRate', '0');
   $('d-prefix').value = store.get('dataPrefix', '');
 
-  // Язык набора — параметр: имена, отчество, адрес, телефон и тексты на выбранном языке
+  // Язык набора — параметр: имена, отчество, адрес и тексты на выбранном языке
   const LANG_NOTES = {
-    ru: 'Отчество — настоящее, по полу. Телефоны случайные (+7 9…) — могут существовать, SMS на них не отправляйте.',
-    en: 'Вместо отчества — второе имя (middle name). Телефоны — из вымышленных диапазонов US 555-01xx и UK 07700 900xxx.',
-    zh: 'Отчества в китайских именах нет — поле пустое. Телефоны случайные (+86) — SMS на них не отправляйте.',
-    ar: 'Вместо отчества — имя отца, как в арабском полном имени. Телефоны случайные (+971) — SMS на них не отправляйте.',
+    ru: 'Отчество — настоящее, по полу.',
+    en: 'Вместо отчества — второе имя (middle name).',
+    zh: 'Отчества в китайских именах нет — поле пустое.',
+    ar: 'Вместо отчества — имя отца, как в арабском полном имени.',
     mixed: 'У каждой строки свой язык из четырёх — проверка, что система принимает разные письменности в одном наборе.',
   };
   $('d-lang').innerHTML = G.LANGUAGES.map((l) => '<option value="' + l.id + '">' + esc(l.label) + '</option>').join('');
   const savedLang = store.get('dataLang', G.DEFAULT_LANG);
   $('d-lang').value = G.LANGUAGES.some((l) => l.id === savedLang) ? savedLang : G.DEFAULT_LANG;
-  const showLangNote = () => { $('d-lang-note').textContent = LANG_NOTES[$('d-lang').value] || ''; };
+
+  // Страна телефона — отдельно от языка: «по языку данных», конкретная страна или все вперемешку
+  $('d-phone').innerHTML = G.PHONE_CHOICES.map((c) => '<option value="' + c.id + '">' + esc(c.label) + '</option>').join('');
+  const savedPhone = store.get('phoneCountry', G.DEFAULT_PHONE_COUNTRY);
+  $('d-phone').value = G.PHONE_CHOICES.some((c) => c.id === savedPhone) ? savedPhone : G.DEFAULT_PHONE_COUNTRY;
+  function phoneNote() {
+    const choice = $('d-phone').value;
+    const lang = $('d-lang').value;
+    const NO_SMS = 'номера случайные и могут существовать — SMS на них не отправляйте';
+    if (choice === 'mixed') return 'Телефоны 13 стран вперемешку — проверка разных форматов в одном наборе; ' + NO_SMS + '.';
+    const country = G.PHONE_COUNTRIES.find((c) => c.id === choice);
+    if (country) return country.fictional ? 'Телефоны — из вымышленных номеров, выделенных для кино и тестов.' : 'Телефоны: ' + NO_SMS + '.';
+    if (lang === 'en') return 'Телефоны по языку: США и Великобритания — из вымышленных номеров для кино и тестов.';
+    const byLang = { ru: 'Россия (+7)', zh: 'Китай (+86)', ar: 'ОАЭ (+971)', mixed: 'страна по языку каждой строки' };
+    return 'Телефоны по языку: ' + (byLang[lang] || '') + '; ' + NO_SMS + '.';
+  }
+  const showLangNote = () => { $('d-lang-note').textContent = (LANG_NOTES[$('d-lang').value] || '') + ' ' + phoneNote(); };
   showLangNote();
 
   let dRows = [];
@@ -269,11 +285,12 @@
     store.set('trapRate', $('d-traps').value);
     store.set('dataPrefix', $('d-prefix').value);
     store.set('dataLang', $('d-lang').value);
+    store.set('phoneCountry', $('d-phone').value);
     if (!ids.length) { err.textContent = 'Выберите хотя бы одно поле'; err.hidden = false; return; }
     if (!(count >= 1 && count <= 1000)) { err.textContent = 'Количество строк — от 1 до 1000'; err.hidden = false; return; }
     err.hidden = true;
     dSeed = (keepSeed === true && dSeed) || String(Math.floor(Math.random() * 1e9));
-    dRows = G.generateRows(count, G.seedFrom(dSeed), ids, null, { trapRate: $('d-traps').value, prefix: $('d-prefix').value, lang: $('d-lang').value });
+    dRows = G.generateRows(count, G.seedFrom(dSeed), ids, null, { trapRate: $('d-traps').value, prefix: $('d-prefix').value, lang: $('d-lang').value, phoneCountry: $('d-phone').value });
     const keys = Object.keys(dRows[0]);
     const trapCount = dRows.traps.reduce((n, t) => n + t.length, 0);
     $('d-head').innerHTML = '<tr>' + keys.map((k) => '<th>' + esc(k) + '</th>').join('') + '</tr>';
@@ -298,6 +315,7 @@
   $('d-cols').addEventListener('change', () => { if (dRows.length) generateData(true); });
   $('d-traps').addEventListener('change', () => { if (dRows.length) generateData(true); });
   $('d-lang').addEventListener('change', () => { showLangNote(); generateData(true); });
+  $('d-phone').addEventListener('change', () => { showLangNote(); generateData(true); });
   $('d-prefix').addEventListener('input', () => { if (dRows.length) generateData(true); });
   document.querySelectorAll('[data-prefix]').forEach((b) => b.addEventListener('click', () => {
     $('d-prefix').value = b.dataset.prefix;

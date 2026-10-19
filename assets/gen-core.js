@@ -425,19 +425,42 @@
     return local + '@' + r.pick(EMAIL_DOMAINS);
   }
 
-  // Телефоны: US 555-0100…0199 и UK 07700 900xxx — диапазоны, выделенные для кино и тестов;
-  // российские, китайские и арабские номера случайные — могут существовать, SMS на них не слать
-  function makePhone(r, lang) {
-    if (lang === 'en') {
-      const roll = r();
-      const area = r.pick(US_AREAS);
-      const us = pad(r.int(0, 99));
-      const uk = pad(r.int(0, 999), 3);
-      return roll < 0.5 ? '+1 (' + area + ') 555-01' + us : '+44 7700 900' + uk;
-    }
-    if (lang === 'zh') return '+86 1' + r.pick(['3', '5', '8']) + r.digits(1) + ' ' + r.digits(4) + ' ' + r.digits(4);
-    if (lang === 'ar') return '+971 5' + r.pick(['0', '2', '5', '6']) + ' ' + r.digits(3) + ' ' + r.digits(4);
-    return '+7 9' + r.digits(2) + ' ' + r.digits(3) + '-' + r.digits(2) + '-' + r.digits(2);
+  // Мобильные номера по странам. fictional: true — диапазоны, выделенные регуляторами для кино и тестов
+  // (US 555-0100…0199, UK 07700 900xxx); остальные номера случайные и могут существовать — SMS на них не слать.
+  const PHONE_COUNTRIES = [
+    { id: 'ru', label: 'Россия (+7)', gen: (r) => '+7 9' + r.digits(2) + ' ' + r.digits(3) + '-' + r.digits(2) + '-' + r.digits(2) },
+    { id: 'kz', label: 'Казахстан (+7 7…)', gen: (r) => '+7 7' + r.pick(['00', '01', '02', '05', '07', '08', '47', '71', '75', '76', '77', '78']) + ' ' + r.digits(3) + '-' + r.digits(2) + '-' + r.digits(2) },
+    { id: 'by', label: 'Беларусь (+375)', gen: (r) => '+375 ' + r.pick(['25', '29', '33', '44']) + ' ' + r.digits(3) + '-' + r.digits(2) + '-' + r.digits(2) },
+    { id: 'us', label: 'США (+1, вымышленные)', fictional: true, gen: (r) => '+1 (' + r.pick(US_AREAS) + ') 555-01' + pad(r.int(0, 99)) },
+    { id: 'uk', label: 'Великобритания (+44, вымышленные)', fictional: true, gen: (r) => '+44 7700 900' + pad(r.int(0, 999), 3) },
+    { id: 'de', label: 'Германия (+49)', gen: (r) => '+49 1' + r.pick(['51', '52', '57', '60', '62', '70', '71', '76']) + ' ' + r.digits(r.int(7, 8)) },
+    { id: 'fr', label: 'Франция (+33)', gen: (r) => '+33 ' + r.pick(['6', '7']) + ' ' + r.digits(2) + ' ' + r.digits(2) + ' ' + r.digits(2) + ' ' + r.digits(2) },
+    { id: 'tr', label: 'Турция (+90)', gen: (r) => '+90 5' + r.pick(['30', '32', '35', '41', '42', '43', '50', '53', '55']) + ' ' + r.digits(3) + ' ' + r.digits(2) + ' ' + r.digits(2) },
+    { id: 'cn', label: 'Китай (+86)', gen: (r) => '+86 1' + r.pick(['3', '5', '8']) + r.digits(1) + ' ' + r.digits(4) + ' ' + r.digits(4) },
+    { id: 'jp', label: 'Япония (+81)', gen: (r) => '+81 ' + r.pick(['70', '80', '90']) + ' ' + r.digits(4) + ' ' + r.digits(4) },
+    { id: 'in', label: 'Индия (+91)', gen: (r) => '+91 ' + r.int(6, 9) + r.digits(4) + ' ' + r.digits(5) },
+    { id: 'ae', label: 'ОАЭ (+971)', gen: (r) => '+971 5' + r.pick(['0', '2', '4', '5', '6', '8']) + ' ' + r.digits(3) + ' ' + r.digits(4) },
+    { id: 'br', label: 'Бразилия (+55)', gen: (r) => '+55 ' + r.pick(['11', '21', '31', '41', '51', '61']) + ' 9' + r.digits(4) + '-' + r.digits(4) },
+  ];
+  const PHONE_CHOICES = [
+    { id: 'lang', label: 'По языку данных' },
+    ...PHONE_COUNTRIES.map((c) => ({ id: c.id, label: c.label })),
+    { id: 'mixed', label: 'Все страны вперемешку' },
+  ];
+  const DEFAULT_PHONE_COUNTRY = 'lang';
+  // «По языку данных»: английский — США или Великобритания (вымышленные), остальные — своя страна
+  const PHONE_BY_LANG = { ru: ['ru'], en: ['us', 'uk'], zh: ['cn'], ar: ['ae'] };
+
+  // Свой генератор под телефон (seed — одно число из основного): смена страны меняет только телефоны,
+  // а имена, адреса и остальное в наборе остаются прежними
+  function makePhone(phoneSeed, lang, choice) {
+    const r = makeRng(phoneSeed);
+    const ids = choice === 'mixed' ? PHONE_COUNTRIES.map((c) => c.id)
+      : PHONE_COUNTRIES.some((c) => c.id === choice) ? [choice]
+        : PHONE_BY_LANG[lang] || ['ru'];
+    const id = r.pick(ids);
+    const country = PHONE_COUNTRIES.find((c) => c.id === id);
+    return { phone: country.gen(r), country: country.id };
   }
 
   function makeAddress(r, lang) {
@@ -524,19 +547,21 @@
   }
 
   // Строка генерируется целиком всегда — тогда при том же seed данные не зависят от выбранных колонок
-  function makePerson(r, now, langParam) {
+  function makePerson(r, now, langParam, phoneChoice) {
     const langRoll = r.pick(LANG_IDS);
     const lang = LANG_IDS.includes(langParam) ? langParam : langRoll;
     const g = r() < 0.5 ? 'm' : 'f';
     const name = makeName(r, lang, g);
     const domain = makeDomain(r, lang);
+    const phone = makePhone(Math.floor(r() * 4294967296), lang, phoneChoice);
     return {
       lang,
+      phoneCountry: phone.country,
       first_name: name.first,
       last_name: name.last,
       middle_name: name.middle,
       email: makeEmail(r, name.latFirst, name.latLast),
-      phone: makePhone(r, lang),
+      phone: phone.phone,
       inn: makeInn(r),
       passport: makePassport(r, now),
       address: makeAddress(r, lang),
@@ -595,21 +620,25 @@
     if ('url' in row && !trapped.includes('url')) row.url = row.url.replace(/^(\w+:\/\/)/, '$1' + hp);
   }
 
-  // Возвращает массив строк; rows.traps[i] — поля строки i с ловушкой, rows.langs[i] — язык строки.
-  // opts: { trapRate: доля ловушек 0…1, prefix: шаблон префикса, lang: ru | en | zh | ar | mixed }
+  // Возвращает массив строк; rows.traps[i] — поля строки i с ловушкой, rows.langs[i] — язык строки,
+  // rows.phoneCountries[i] — страна телефона.
+  // opts: { trapRate: доля ловушек 0…1, prefix: шаблон префикса, lang: ru | en | zh | ar | mixed,
+  //         phoneCountry: lang | mixed | id страны из PHONE_COUNTRIES }
   function generateRows(count, seed, selectedIds, now, opts) {
     const o = typeof opts === 'object' && opts ? opts : { trapRate: opts };
     const r = makeRng(seed);
     const rate = Number(o.trapRate) || 0;
     const lang = o.lang || DEFAULT_LANG;
+    const phoneChoice = o.phoneCountry || DEFAULT_PHONE_COUNTRY;
     const sel = new Set(selectedIds);
     const keys = COLUMNS.filter((c) => sel.has(c.id)).map((c) => c.id);
     const at = now || new Date();
     const rows = [];
     rows.traps = [];
     rows.langs = [];
+    rows.phoneCountries = [];
     for (let i = 0; i < count; i++) {
-      const p = makePerson(r, at, lang);
+      const p = makePerson(r, at, lang, phoneChoice);
       // Бросок и выбор делаются всегда — тогда данные не зависят от доли ловушек и колонок
       const trapped = [];
       Object.keys(TRAPS).forEach((key) => {
@@ -625,6 +654,7 @@
       rows.push(row);
       rows.traps.push(trapped.filter((k) => k in row));
       rows.langs.push(p.lang);
+      rows.phoneCountries.push(p.phoneCountry);
     }
     return rows;
   }
@@ -757,7 +787,7 @@
     seedFrom, makeRng, counterstring, makeStr, strStats, FILLS,
     boundaryString, boundaryInt, boundaryDecimal, boundaryDate, DATE_FORMATS, fmtDate, parseISO,
     innControls, luhnValid, DEFAULT_FILL,
-    LANGUAGES, DEFAULT_LANG, COLUMNS, DEFAULT_COLUMNS, TRAP_RATES, generateRows, expandPrefix, toCSV, STRING_SETS,
+    LANGUAGES, DEFAULT_LANG, PHONE_COUNTRIES, PHONE_CHOICES, DEFAULT_PHONE_COUNTRY, COLUMNS, DEFAULT_COLUMNS, TRAP_RATES, generateRows, expandPrefix, toCSV, STRING_SETS,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.QAGen = api;

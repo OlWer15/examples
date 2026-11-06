@@ -592,6 +592,19 @@
   // Префикс помечает тестовые записи, чтобы их было легко найти и удалить.
   // Ставится в начало текстовых полей; в email — в начало адреса, в домен и URL — в начало хоста.
   // ИНН, паспорт и телефон не трогаем — сломается формат. Ловушки тоже не трогаем.
+  // В какие из полей ставить — выбирает пользователь (opts.prefixFields), по умолчанию только в почту.
+  const PREFIX_FIELDS = [
+    { id: 'first_name', label: 'Имя' },
+    { id: 'last_name', label: 'Фамилия' },
+    { id: 'middle_name', label: 'Отчество' },
+    { id: 'email', label: 'Почта (в начало адреса)' },
+    { id: 'address', label: 'Адрес' },
+    { id: 'domain', label: 'Домен (в начало)' },
+    { id: 'url', label: 'URL (в начало хоста)' },
+    { id: 'text', label: 'Текст' },
+    { id: 'words', label: 'Набор слов' },
+  ];
+  const DEFAULT_PREFIX_FIELDS = ['email'];
   const PREFIX_TEXT_KEYS = ['first_name', 'last_name', 'middle_name', 'address', 'text', 'words'];
 
   // {n} — номер строки (с 1), {date} — дата ГГГГММДД
@@ -606,23 +619,25 @@
   // В домене — буквы (в т.ч. не латинские, это IDN), цифры и дефис; остальное → дефис
   const hostSafe = (s) => s.toLowerCase().replace(/[^\p{L}\p{N}-]/gu, '-').replace(/^-+/, '');
 
-  function applyPrefix(row, prefix, trapped) {
+  function applyPrefix(row, prefix, trapped, fields) {
     if (!prefix) return;
+    const can = (k) => k in row && fields.includes(k) && !trapped.includes(k);
     PREFIX_TEXT_KEYS.forEach((k) => {
       // пустое отчество (китайские имена) префиксом не заполняем
-      if (k in row && row[k] !== '' && !trapped.includes(k)) row[k] = prefix + row[k];
+      if (can(k) && row[k] !== '') row[k] = prefix + row[k];
     });
     const ep = emailSafe(prefix);
-    if ('email' in row && ep && !trapped.includes('email')) row.email = ep + row.email;
+    if (can('email') && ep) row.email = ep + row.email;
     const hp = hostSafe(prefix);
     if (!hp) return;
-    if ('domain' in row && !trapped.includes('domain')) row.domain = hp + row.domain;
-    if ('url' in row && !trapped.includes('url')) row.url = row.url.replace(/^(\w+:\/\/)/, '$1' + hp);
+    if (can('domain')) row.domain = hp + row.domain;
+    if (can('url')) row.url = row.url.replace(/^(\w+:\/\/)/, '$1' + hp);
   }
 
   // Возвращает массив строк; rows.traps[i] — поля строки i с ловушкой, rows.langs[i] — язык строки,
   // rows.phoneCountries[i] — страна телефона.
   // opts: { trapRate: доля ловушек 0…1, prefix: шаблон префикса, lang: ru | en | zh | ar | mixed,
+  //         prefixFields: id полей из PREFIX_FIELDS, куда ставить префикс (по умолчанию — только email),
   //         phoneCountry: lang | mixed | id страны из PHONE_COUNTRIES }
   function generateRows(count, seed, selectedIds, now, opts) {
     const o = typeof opts === 'object' && opts ? opts : { trapRate: opts };
@@ -630,6 +645,7 @@
     const rate = Number(o.trapRate) || 0;
     const lang = o.lang || DEFAULT_LANG;
     const phoneChoice = o.phoneCountry || DEFAULT_PHONE_COUNTRY;
+    const prefixFields = Array.isArray(o.prefixFields) ? o.prefixFields : DEFAULT_PREFIX_FIELDS;
     const sel = new Set(selectedIds);
     const keys = COLUMNS.filter((c) => sel.has(c.id)).map((c) => c.id);
     const at = now || new Date();
@@ -650,7 +666,7 @@
       });
       const row = {};
       keys.forEach((k) => { row[k] = p[k]; });
-      applyPrefix(row, expandPrefix(o.prefix, i + 1, at), trapped);
+      applyPrefix(row, expandPrefix(o.prefix, i + 1, at), trapped, prefixFields);
       rows.push(row);
       rows.traps.push(trapped.filter((k) => k in row));
       rows.langs.push(p.lang);
@@ -787,7 +803,7 @@
     seedFrom, makeRng, counterstring, makeStr, strStats, FILLS,
     boundaryString, boundaryInt, boundaryDecimal, boundaryDate, DATE_FORMATS, fmtDate, parseISO,
     innControls, luhnValid, DEFAULT_FILL,
-    LANGUAGES, DEFAULT_LANG, PHONE_COUNTRIES, PHONE_CHOICES, DEFAULT_PHONE_COUNTRY, COLUMNS, DEFAULT_COLUMNS, TRAP_RATES, generateRows, expandPrefix, toCSV, STRING_SETS,
+    LANGUAGES, DEFAULT_LANG, PHONE_COUNTRIES, PHONE_CHOICES, DEFAULT_PHONE_COUNTRY, COLUMNS, DEFAULT_COLUMNS, PREFIX_FIELDS, DEFAULT_PREFIX_FIELDS, TRAP_RATES, generateRows, expandPrefix, toCSV, STRING_SETS,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.QAGen = api;

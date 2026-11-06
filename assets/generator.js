@@ -192,51 +192,79 @@
 
   /* ---------- Наборы данных ---------- */
 
-  const knownCols = new Set(G.COLUMNS.map((c) => c.id));
-  const savedCols = store.get('dataColumns.v2', G.DEFAULT_COLUMNS).filter((id) => knownCols.has(id));
-  const selected = new Set(savedCols.length ? savedCols : G.DEFAULT_COLUMNS);
-  $('d-cols').innerHTML = G.COLUMNS.map((c) =>
+  const shortLabel = (c) => c.label.replace(/\s*\(.*\)$/, '');
+  const checkboxes = (items, selected, testid) => items.map((c) =>
     '<label class="checkline"><input type="checkbox" value="' + c.id + '"' + (selected.has(c.id) ? ' checked' : '') +
-    ' data-testid="data:column-' + c.id + '"> ' + esc(c.label) + '</label>'
+    ' data-testid="' + testid + c.id + '"> ' + esc(c.label) + '</label>'
   ).join('');
 
-  // Поля — свёрнутый список с выбором нескольких: в закрытом виде показывает, что выбрано
-  const colBoxes = () => Array.from($('d-cols').querySelectorAll('input[type="checkbox"]'));
-  const shortLabel = (c) => c.label.replace(/\s*\(.*\)$/, '');
-  function updateColsValue() {
-    const chosen = G.COLUMNS.filter((c) => colBoxes().some((b) => b.value === c.id && b.checked)).map(shortLabel);
-    const text = !chosen.length ? 'Не выбрано'
-      : chosen.length === G.COLUMNS.length ? 'Все поля (' + chosen.length + ')'
-        : chosen.length <= 3 ? chosen.join(', ')
-          : chosen.slice(0, 2).join(', ') + ' и ещё ' + (chosen.length - 2);
-    $('d-cols-value').textContent = text;
-    $('d-cols-toggle').title = chosen.join(', ');
+  // Свёрнутый список с выбором нескольких («Поля», «Куда ставить префикс»): в закрытом виде показывает, что выбрано.
+  // Элементы: <base>-wrap, -toggle, -value, -panel, -all, -default, -done; чекбоксы — в элементе listId
+  function multiSelect(base, listId, items, defaults, allText) {
+    const boxes = () => Array.from($(listId).querySelectorAll('input[type="checkbox"]'));
+    const chosen = () => items.filter((c) => boxes().some((b) => b.value === c.id && b.checked));
+    function updateValue() {
+      const names = chosen().map(shortLabel);
+      $(base + '-value').textContent = !names.length ? 'Не выбрано'
+        : names.length === items.length ? allText + ' (' + names.length + ')'
+          : names.length <= 3 ? names.join(', ')
+            : names.slice(0, 2).join(', ') + ' и ещё ' + (names.length - 2);
+      $(base + '-toggle').title = names.join(', ');
+    }
+    function setOpen(open) {
+      $(base + '-panel').hidden = !open;
+      $(base + '-toggle').setAttribute('aria-expanded', String(open));
+      $(base + '-wrap').classList.toggle('open', open);
+    }
+    $(base + '-toggle').addEventListener('click', () => {
+      const open = $(base + '-panel').hidden;
+      setOpen(open);
+      if (open) boxes()[0].focus();
+    });
+    $(base + '-done').addEventListener('click', () => { setOpen(false); $(base + '-toggle').focus(); });
+    document.addEventListener('click', (e) => {
+      if (!$(base + '-panel').hidden && !$(base + '-wrap').contains(e.target)) setOpen(false);
+    });
+    $(base + '-wrap').addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !$(base + '-panel').hidden) { setOpen(false); $(base + '-toggle').focus(); }
+    });
+    function set(ids) {
+      boxes().forEach((b) => { b.checked = ids.includes(b.value); });
+      $(listId).dispatchEvent(new Event('change'));
+    }
+    $(base + '-all').addEventListener('click', () => set(items.map((c) => c.id)));
+    $(base + '-default').addEventListener('click', () => set(defaults));
+    $(listId).addEventListener('change', updateValue);
+    updateValue();
+    return { ids: () => chosen().map((c) => c.id), labels: () => chosen().map(shortLabel) };
   }
-  function setColsOpen(open) {
-    $('d-cols-panel').hidden = !open;
-    $('d-cols-toggle').setAttribute('aria-expanded', String(open));
-    $('d-cols-wrap').classList.toggle('open', open);
+
+  const knownCols = new Set(G.COLUMNS.map((c) => c.id));
+  const savedCols = store.get('dataColumns.v2', G.DEFAULT_COLUMNS).filter((id) => knownCols.has(id));
+  $('d-cols').innerHTML = checkboxes(G.COLUMNS, new Set(savedCols.length ? savedCols : G.DEFAULT_COLUMNS), 'data:column-');
+  multiSelect('d-cols', 'd-cols', G.COLUMNS, G.DEFAULT_COLUMNS, 'Все поля');
+
+  // Куда ставить префикс — пустой выбор допустим (префикс никуда не ставится), поэтому без подмены на умолчание
+  const knownPfx = new Set(G.PREFIX_FIELDS.map((f) => f.id));
+  const savedPfx = store.get('prefixFields', G.DEFAULT_PREFIX_FIELDS);
+  $('d-pfx-list').innerHTML = checkboxes(G.PREFIX_FIELDS,
+    new Set(Array.isArray(savedPfx) ? savedPfx.filter((id) => knownPfx.has(id)) : G.DEFAULT_PREFIX_FIELDS), 'data:prefix-field-');
+  const pfx = multiSelect('d-pfx', 'd-pfx-list', G.PREFIX_FIELDS, G.DEFAULT_PREFIX_FIELDS, 'Во все поля');
+
+  // Подсказка: куда сейчас встанет префикс и какие из выбранных полей не попали в набор
+  function showPrefixWhere() {
+    const ids = pfx.ids();
+    const inSet = new Set(Array.from($('d-cols').querySelectorAll('input:checked')).map((i) => i.value));
+    // «Имя» → «имя», а «URL» остаётся как есть
+    const list = (names) => names.map((s) => /^\p{Lu}\p{Ll}/u.test(s) ? s[0].toLowerCase() + s.slice(1) : s).join(', ');
+    const missing = G.PREFIX_FIELDS.filter((f) => ids.includes(f.id) && !inSet.has(f.id)).map(shortLabel);
+    $('d-prefix-where').textContent = !ids.length ? 'Сейчас не ставится никуда — выберите поля в «Куда ставить префикс».'
+      : 'Ставится в начало: ' + list(pfx.labels()) + '.' +
+        (missing.length ? ' Сейчас нет в наборе: ' + list(missing) + '.' : '');
   }
-  $('d-cols-toggle').addEventListener('click', () => {
-    const open = $('d-cols-panel').hidden;
-    setColsOpen(open);
-    if (open) colBoxes()[0].focus();
-  });
-  $('d-cols-done').addEventListener('click', () => { setColsOpen(false); $('d-cols-toggle').focus(); });
-  document.addEventListener('click', (e) => {
-    if (!$('d-cols-panel').hidden && !$('d-cols-wrap').contains(e.target)) setColsOpen(false);
-  });
-  $('d-cols-wrap').addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !$('d-cols-panel').hidden) { setColsOpen(false); $('d-cols-toggle').focus(); }
-  });
-  function setCols(ids) {
-    colBoxes().forEach((b) => { b.checked = ids.includes(b.value); });
-    $('d-cols').dispatchEvent(new Event('change'));
-  }
-  $('d-cols-all').addEventListener('click', () => setCols(G.COLUMNS.map((c) => c.id)));
-  $('d-cols-default').addEventListener('click', () => setCols(G.DEFAULT_COLUMNS));
-  $('d-cols').addEventListener('change', updateColsValue);
-  updateColsValue();
+  $('d-cols').addEventListener('change', showPrefixWhere);
+  $('d-pfx-list').addEventListener('change', showPrefixWhere);
+  showPrefixWhere();
   $('d-sep').value = store.get('csvSep', ';');
   $('d-traps').innerHTML = G.TRAP_RATES.map((t) => '<option value="' + t.id + '">' + esc(t.label) + '</option>').join('');
   $('d-traps').value = store.get('trapRate', '0');
@@ -284,13 +312,14 @@
     store.set('csvSep', $('d-sep').value);
     store.set('trapRate', $('d-traps').value);
     store.set('dataPrefix', $('d-prefix').value);
+    store.set('prefixFields', pfx.ids());
     store.set('dataLang', $('d-lang').value);
     store.set('phoneCountry', $('d-phone').value);
     if (!ids.length) { err.textContent = 'Выберите хотя бы одно поле'; err.hidden = false; return; }
     if (!(count >= 1 && count <= 1000)) { err.textContent = 'Количество строк — от 1 до 1000'; err.hidden = false; return; }
     err.hidden = true;
     dSeed = (keepSeed === true && dSeed) || String(Math.floor(Math.random() * 1e9));
-    dRows = G.generateRows(count, G.seedFrom(dSeed), ids, null, { trapRate: $('d-traps').value, prefix: $('d-prefix').value, lang: $('d-lang').value, phoneCountry: $('d-phone').value });
+    dRows = G.generateRows(count, G.seedFrom(dSeed), ids, null, { trapRate: $('d-traps').value, prefix: $('d-prefix').value, prefixFields: pfx.ids(), lang: $('d-lang').value, phoneCountry: $('d-phone').value });
     const keys = Object.keys(dRows[0]);
     const trapCount = dRows.traps.reduce((n, t) => n + t.length, 0);
     $('d-head').innerHTML = '<tr>' + keys.map((k) => '<th>' + esc(k) + '</th>').join('') + '</tr>';
@@ -310,9 +339,10 @@
   }
 
   $('d-gen').addEventListener('click', generateData);
-  // Смена колонок, доли ловушек и префикса пересобирает тот же набор,
+  // Смена колонок, доли ловушек и префикса (и полей для него) пересобирает тот же набор,
   // иначе данные перетасовывались бы при каждом символе
   $('d-cols').addEventListener('change', () => { if (dRows.length) generateData(true); });
+  $('d-pfx-list').addEventListener('change', () => { if (dRows.length) generateData(true); });
   $('d-traps').addEventListener('change', () => { if (dRows.length) generateData(true); });
   $('d-lang').addEventListener('change', () => { showLangNote(); generateData(true); });
   $('d-phone').addEventListener('change', () => { showLangNote(); generateData(true); });

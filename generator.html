@@ -121,6 +121,21 @@
         <label class="field wide">Префикс
           <input class="input" id="d-prefix" placeholder="например, QA_ или test-{n}-" autocomplete="off" data-testid="data:prefix">
         </label>
+        <div class="field wide ms" id="d-pfx-wrap">
+          <span id="d-pfx-label">Куда ставить префикс</span>
+          <button class="input ms-toggle" id="d-pfx-toggle" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="d-pfx-panel" aria-labelledby="d-pfx-label d-pfx-toggle" data-testid="data:prefix-fields-toggle">
+            <span class="ms-value" id="d-pfx-value"></span><span class="ms-arrow" aria-hidden="true">▾</span>
+          </button>
+          <div class="ms-panel" id="d-pfx-panel" role="group" aria-label="Поля с префиксом" hidden data-testid="data:prefix-fields-panel">
+            <div class="ms-list" id="d-pfx-list" data-testid="data:prefix-fields"></div>
+            <div class="ms-actions">
+              <button class="btn small" type="button" id="d-pfx-all" data-testid="data:prefix-fields-all">Все</button>
+              <button class="btn small" type="button" id="d-pfx-default" data-testid="data:prefix-fields-default">По умолчанию</button>
+              <span class="spacer"></span>
+              <button class="btn small primary" type="button" id="d-pfx-done" data-testid="data:prefix-fields-done">Готово</button>
+            </div>
+          </div>
+        </div>
         <label class="field wide">Ловушки
           <select class="input" id="d-traps" data-testid="data:traps"></select>
         </label>
@@ -134,7 +149,7 @@
         <button class="btn primary" id="d-gen" type="button" data-testid="data:generate">Сгенерировать</button>
       </div>
       <div class="prefix-hint small muted">
-        <span>Префикс помечает тестовые записи, чтобы потом найти и удалить их одним запросом. Ставится в начало имени, фамилии, отчества, адреса, текстов, почты и хоста в доменах и URL; телефон, ИНН и паспорт не трогает.</span>
+        <span>Префикс помечает тестовые записи, чтобы потом найти и удалить их одним запросом. <span id="d-prefix-where" data-testid="data:prefix-where"></span> Телефон, ИНН, паспорт и ловушки не трогает.</span>
         <span><code>{n}</code> — номер строки, <code>{date}</code> — сегодняшняя дата (ГГГГММДД). Быстрый выбор:
           <button class="btn small" type="button" data-prefix="QA_" data-testid="data:prefix-preset">QA_</button>
           <button class="btn small" type="button" data-prefix="autotest_" data-testid="data:prefix-preset">autotest_</button>

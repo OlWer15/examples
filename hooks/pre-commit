@@ -1,0 +1,6 @@
+#!/bin/sh
+# Перед коммитом: обновить ?v= у скриптов и стилей в HTML (version-assets.js) и добавить изменённые страницы в коммит.
+# Подключается один раз: git config core.hooksPath hooks
+changed=$(node version-assets.js --list) || exit 1
+[ -n "$changed" ] && git add -- $changed
+exit 0

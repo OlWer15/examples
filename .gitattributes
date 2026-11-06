@@ -1,0 +1,2 @@
+# Хуки запускает sh — с концами строк CRLF (Windows) он падает на \r
+hooks/* text eol=lf

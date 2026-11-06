@@ -335,7 +335,8 @@
 
   // Только зарезервированные под тесты зоны (RFC 2606/6761): письма не уйдут реальным людям
   const SAFE_ZONES = ['example.com', 'example.org', 'example.net', 'test', 'example'];
-  const EMAIL_DOMAINS = ['example.com', 'example.org', 'example.net', 'mail.example.com', 'example.test', 'posta.test', 'firma.example', 'corp.example.org'];
+  // Почта — всегда на example.com: одно окончание, тестовые адреса легко узнать и отфильтровать
+  const EMAIL_DOMAIN = 'example.com';
   const SUBDOMAINS = ['www', 'mail', 'shop', 'api', 'dev', 'static', 'm', 'admin', 'beta'];
   // IDN-домены в зарезервированных тестовых зонах IANA — под язык набора
   const IDN_DOMAINS = {
@@ -422,7 +423,7 @@
 
   function makeEmail(r, latFirst, latLast) {
     const local = toAscii(latFirst) + r.pick(['.', '_', '']) + toAscii(latLast) + (r() < 0.5 ? r.int(1, 99) : '');
-    return local + '@' + r.pick(EMAIL_DOMAINS);
+    return local + '@' + EMAIL_DOMAIN;
   }
 
   // Мобильные номера по странам. fictional: true — диапазоны, выделенные регуляторами для кино и тестов

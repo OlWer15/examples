@@ -371,7 +371,9 @@
 
   // Ловушки: пустые, граничные и необычные значения. Часть — невалидна намеренно.
   const TRAPS = {
-    email: ['user+tag@example.com', "o'brien@example.com", 'USER@EXAMPLE.COM', 'test@пример.испытание', 'a@b.test', ' user@example.com ', 'user@@example.com', 'user@', ''],
+    // почта и в ловушках только на @example.com — необычна часть до @: тег, апостроф, регистр, кириллица,
+    // один символ, пробел в начале, две @, пустая, точка перед @; плюс пустое значение
+    email: ['user+tag@example.com', "o'brien@example.com", 'USER@example.com', 'тест@example.com', 'a@example.com', ' user@example.com', 'user@@example.com', '@example.com', 'user.@example.com', ''],
     words: ['', '   ', '<b>жирный</b>', "O'Brien", '😀👍🏽👨‍👩‍👧', '中文测试', 'مرحبا بالعالم', 'строка 1\nстрока 2', '{{7*7}}', 'a b'],
     text: ['', '<script>alert(1)</script>', '"; DROP TABLE users; --', 'Ёжик 漢字 مرحبا Crème brûlée 😀', 'Z̤͔ͧ̑̓ä͖̭̈̇lͮ̒ͫǧ̗͚o̮̤', counterstring(1000)],
     // метка домена — максимум 63 символа: 63 валидно, 64 нет
